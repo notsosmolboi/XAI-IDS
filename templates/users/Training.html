@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}Train Model – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}" class="active"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Train <span>Model</span></h1>
+    <p>Train MLP + Random Forest + XGBoost Hybrid with SHAP &amp; LIME explainability</p>
+</div>
+
+{% if not success %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        {% if error %}
+        <div class="alert-xai-danger mb-3">
+            <strong><i class="fa fa-exclamation-triangle me-2"></i>Error:</strong> {{ error }}
+            {% if traceback %}
+            <pre class="report-pre mt-2" style="font-size:.75rem;">{{ traceback }}</pre>{% endif %}
+        </div>
+        {% endif %}
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-robot"></i> Model Configuration</div>
+            <div style="color:var(--text-dim);font-size:.875rem;line-height:1.8;margin-bottom:1.5rem;">
+                <strong style="color:var(--text-light);">Algorithms:</strong> MLP + Random Forest + XGBoost → Hybrid
+                Voting<br>
+                <strong style="color:var(--text-light);">Split:</strong> 80% train / 20% test<br>
+                <strong style="color:var(--text-light);">Explainability:</strong> SHAP (global) + LIME (local)<br>
+                <strong style="color:var(--text-light);">Dataset:</strong>
+                <span style="color:var(--accent);">{{ dataset_name }}</span>
+            </div>
+            <form action="{% url 'training' %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn-xai justify-content-center" style="width:100%;"
+                    onclick="startTraining()">
+                    <i class="fa fa-play"></i> Start Training
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Metric cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ accuracy }}%</div>
+            <div class="stat-label"><i class="fa fa-bullseye me-1"></i>Accuracy (Hybrid)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ precision }}%</div>
+            <div class="stat-label"><i class="fa fa-crosshairs me-1"></i>Precision</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ recall }}%</div>
+            <div class="stat-label"><i class="fa fa-redo me-1"></i>Recall</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ f1 }}%</div>
+            <div class="stat-label"><i class="fa fa-star me-1"></i>F1 Score</div>
+        </div>
+    </div>
+</div>
+
+<!-- Sample counts -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="xai-card" style="text-align:center;">
+            <div style="color:var(--text-dim);font-size:.8rem;">Training Samples</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);">{{ n_train }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="xai-card" style="text-align:center;">
+            <div style="color:var(--text-dim);font-size:.8rem;">Test Samples</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);">{{ n_test }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="xai-card" style="text-align:center;">
+            <div style="color:var(--text-dim);font-size:.8rem;">Classes</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);">{{ n_classes }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="xai-card" style="text-align:center;">
+            <div style="color:var(--text-dim);font-size:.8rem;">Dataset Used</div>
+            <div style="font-size:.9rem;font-weight:700;color:var(--accent);word-break:break-all;">{{ dataset_name }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All algorithm metrics table -->
+{% if all_metrics %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-table"></i> All Algorithm Results</div>
+    <div class="table-responsive">
+        <table class="table table-dark table-bordered table-hover" style="font-size:.875rem;">
+            <thead>
+                <tr style="color:var(--accent);">
+                    <th>Algorithm</th>
+                    <th>Accuracy %</th>
+                    <th>Precision %</th>
+                    <th>Recall %</th>
+                    <th>F1 Score %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in all_metrics %}
+                <tr {% if m.Algorithm == 'MLP' %}style="border-left:3px solid var(--accent);" {% endif %} {% if m.Algorithm == 'Hybrid Voting' %}style="border-left:3px solid #ffa500;font-weight:600;" {% endif %}>
+                    <td>
+                        {{ m.Algorithm }}
+                        {% if m.Algorithm == 'MLP' %}<span style="color:var(--accent);font-size:.75rem;"> ★ Base
+                            Paper</span>{% endif %}
+                        {% if m.Algorithm == 'Hybrid Voting' %}<span style="color:#ffa500;font-size:.75rem;"> ★ Main
+                            Model</span>{% endif %}
+                    </td>
+                    <td
+                        style="color:{% if m.Accuracy >= 90 %}#2ecc71{% elif m.Accuracy >= 70 %}#ffa500{% else %}#ff6b6b{% endif %};">
+                        {{ m.Accuracy }}</td>
+                    <td>{{ m.Precision }}</td>
+                    <td>{{ m.Recall }}</td>
+                    <td>{{ m.F1Score }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Comparison chart + confusion matrix -->
+{% if comparison_img %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-chart-bar"></i> Algorithm Comparison Chart</div>
+    <img src="data:image/png;base64,{{ comparison_img }}" class="plot-img" alt="Algorithm Comparison">
+</div>
+{% endif %}
+
+{% if cm_img %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-grip"></i> Confusion Matrix</div>
+            <img src="data:image/png;base64,{{ cm_img }}" class="plot-img" alt="Confusion Matrix">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-chart-bar"></i> Feature Importances (RF)</div>
+            {% if fi_img %}
+            <img src="data:image/png;base64,{{ fi_img }}" class="plot-img" alt="Feature Importances">
+            {% else %}
+            <p style="color:var(--text-dim);">{{ fi_error }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if shap_img %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-chart-area"></i> SHAP Summary Plot (MLP)</div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+        SHAP values show how each feature contributes to the MLP model's predictions globally.
+        Red = high feature value increases prediction; Blue = low feature value.
+    </p>
+    <img src="data:image/png;base64,{{ shap_img }}" class="plot-img" alt="SHAP Summary">
+</div>
+{% endif %}
+{% if shap_error %}<div class="alert-xai-danger mb-3"><i class="fa fa-info-circle me-2"></i>SHAP: {{ shap_error }}</div>
+{% endif %}
+
+{% if lime_img %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-magnifying-glass-chart"></i> LIME Explanation – Sample Instance (MLP)
+    </div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+        LIME explains a single prediction locally.
+        <span style="color:#2ecc71;">Green bars</span> = features supporting the prediction;
+        <span style="color:#e74c3c;">Red bars</span> = features opposing it.
+    </p>
+    <img src="data:image/png;base64,{{ lime_img }}" class="plot-img" alt="LIME Explanation">
+</div>
+{% endif %}
+{% if lime_error %}<div class="alert-xai-danger mb-3"><i class="fa fa-info-circle me-2"></i>LIME: {{ lime_error }}</div>
+{% endif %}
+
+{% if report %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-file-alt"></i> Classification Report</div>
+    <pre class="report-pre">{{ report }}</pre>
+</div>
+{% endif %}
+
+<div class="d-flex gap-3 mt-2">
+    <a href="{% url 'prediction' %}" class="btn-xai"><i class="fa fa-bolt"></i> Run Prediction</a>
+    <form action="{% url 'training' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn-outline-xai" onclick="startTraining()"><i class="fa fa-redo"></i>
+            Retrain</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function startTraining() {
+        document.getElementById('loadingOverlay').classList.add('active');
+        document.querySelector('#loadingOverlay p').textContent = 'Training MLP + RF + XGBoost… this may take a few minutes.';
+    }
+</script>
+{% endblock %}

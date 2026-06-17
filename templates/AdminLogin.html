@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Admin Login – XAI Threat Detect{% endblock %}
+{% block fullpage %}
+{% load static %}
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width:440px;">
+        <div class="logo-area" style="text-align:center;margin-bottom:2rem;">
+            <div style="width:60px;height:60px;background:linear-gradient(135deg,#64ffda,#00b4d8);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:#0a192f;margin-bottom:12px;">
+                <i class="fa fa-user-shield"></i>
+            </div>
+            <h2 style="color:#64ffda;font-size:1.4rem;font-weight:700;">Admin Login</h2>
+            <p style="color:#8892b0;font-size:.85rem;">Access the admin control panel</p>
+        </div>
+        {% for message in messages %}
+        <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:#ff6b6b;border-radius:8px;padding:12px 16px;margin-bottom:1rem;">
+            <i class="fa fa-exclamation-circle me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+        <form action="/AdminLogincheck" method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom:1.2rem;">
+                <label style="color:#8892b0;font-size:.85rem;margin-bottom:6px;display:block;">Admin ID</label>
+                <input type="text" name="loginid" placeholder="Enter admin ID"
+                    style="background:rgba(255,255,255,.05);border:1px solid rgba(100,255,218,.2);color:#ccd6f6;border-radius:8px;padding:10px 14px;width:100%;font-size:.95rem;transition:.2s;"
+                    onfocus="this.style.borderColor='#64ffda'" onblur="this.style.borderColor='rgba(100,255,218,.2)'" required>
+            </div>
+            <div style="margin-bottom:1.8rem;">
+                <label style="color:#8892b0;font-size:.85rem;margin-bottom:6px;display:block;">Password</label>
+                <input type="password" name="pswd" placeholder="Enter password"
+                    style="background:rgba(255,255,255,.05);border:1px solid rgba(100,255,218,.2);color:#ccd6f6;border-radius:8px;padding:10px 14px;width:100%;font-size:.95rem;transition:.2s;"
+                    onfocus="this.style.borderColor='#64ffda'" onblur="this.style.borderColor='rgba(100,255,218,.2)'" required>
+            </div>
+            <button type="submit" style="background:linear-gradient(135deg,#64ffda,#00b4d8);color:#0a192f;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:.95rem;cursor:pointer;width:100%;transition:.2s;">
+                <i class="fa fa-sign-in-alt me-2"></i>Login as Admin
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:1.5rem;">
+            <a href="/" style="color:#8892b0;font-size:.85rem;text-decoration:none;">
+                <i class="fa fa-arrow-left me-1"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+<style>
+:root{--primary:#0a192f;}
+*{box-sizing:border-box;}
+</style>
+{% endblock %}

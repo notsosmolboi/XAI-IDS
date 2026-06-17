@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}User Login – XAI Threat Detect{% endblock %}
+{% block fullpage %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="logo-area">
+            <div class="icon"><i class="fa fa-user-lock"></i></div>
+            <h2>User Login</h2>
+            <p>Sign in to your account</p>
+        </div>
+        {% for message in messages %}
+        <div class="alert-xai-{% if message.tags == 'error' %}danger{% else %}success{% endif %} mb-3">
+            <i class="fa fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %} me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+        <form action="{% url 'UserLoginCheck' %}" method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom:1.2rem;">
+                <label class="form-label-xai">Name</label>
+                <input type="text" name="loginid" placeholder="Enter your name" class="form-control-xai" required>
+            </div>
+            <div style="margin-bottom:1.8rem;">
+                <label class="form-label-xai">Password</label>
+                <input type="password" name="pswd" placeholder="Enter your password" class="form-control-xai" required>
+            </div>
+            <button type="submit" class="btn-xai w-100 justify-content-center" style="width:100%;">
+                <i class="fa fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:1.5rem;display:flex;flex-direction:column;gap:8px;">
+            <p style="color:var(--text-dim);font-size:.85rem;">Don't have an account?
+                <a href="{% url 'UserRegisterForm' %}" style="color:var(--accent);text-decoration:none;">Register here</a>
+            </p>
+            <a href="/" style="color:var(--text-dim);font-size:.85rem;text-decoration:none;">
+                <i class="fa fa-arrow-left me-1"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% block extra_css %}
+<style>
+.auth-wrapper { display:flex!important; }
+.form-control-xai { color: var(--text-light) !important; }
+.form-control-xai::placeholder { color: var(--text-dim); }
+</style>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Predict – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}" class="active"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Threat <span>Prediction</span></h1>
+    <p>Enter network traffic features to classify and explain in real-time</p>
+</div>
+
+{% if model_error %}
+<div class="alert-xai-danger mb-4">
+    <i class="fa fa-exclamation-triangle me-2"></i>{{ model_error }}
+    <a href="{% url 'training' %}" class="btn-xai ms-3" style="padding:6px 16px;font-size:.85rem;">
+        <i class="fa fa-robot"></i> Train Now
+    </a>
+</div>
+{% endif %}
+
+{% if prediction %}
+<!-- Prediction Result -->
+<div class="xai-card mb-4" style="border-color:{% if is_attack %}rgba(255,107,107,.4){% else %}rgba(100,255,218,.3){% endif %};">
+    <div class="xai-card-title"><i class="fa fa-bolt"></i> Prediction Result</div>
+    <div class="row align-items-center">
+        <div class="col-md-4 text-center">
+            <div style="font-size:3rem;margin-bottom:.5rem;">
+                {% if is_attack %}
+                    <i class="fa fa-triangle-exclamation" style="color:#ff6b6b;"></i>
+                {% else %}
+                    <i class="fa fa-shield-halved" style="color:#64ffda;"></i>
+                {% endif %}
+            </div>
+            <div style="font-size:1.8rem;font-weight:800;color:{% if is_attack %}#ff6b6b{% else %}var(--accent){% endif %};">
+                {{ prediction }}
+            </div>
+            <div style="color:var(--text-dim);font-size:.85rem;margin-top:.3rem;">
+                Confidence: <strong style="color:var(--accent);">{{ confidence }}%</strong>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div style="font-size:.8rem;color:var(--text-dim);margin-bottom:.8rem;">Class Probabilities</div>
+            {% for cls, prob in proba %}
+            <div style="margin-bottom:.5rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                    <span style="font-size:.8rem;color:var(--text-light);">{{ cls }}</span>
+                    <span style="font-size:.8rem;color:var(--accent);">{{ prob }}%</span>
+                </div>
+                <div style="background:rgba(255,255,255,.08);border-radius:4px;height:6px;">
+                    <div style="background:linear-gradient(90deg,var(--accent),var(--accent2));height:100%;border-radius:4px;width:{{ prob }}%;transition:.8s;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Attack Explanation Card -->
+{% if attack_info %}
+<div class="xai-card mb-4" style="border-color:{{ attack_info.color }}44;">
+    <div class="xai-card-title" style="color:{{ attack_info.color }};">
+        <i class="fa {{ attack_info.icon }}"></i>
+        Why was this detected as <strong>{{ prediction }}</strong>?
+    </div>
+    <p style="color:var(--text-light);margin-bottom:1rem;">{{ attack_info.reason }}</p>
+
+    <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:.5rem;"><strong style="color:var(--text-light);">Key Indicators:</strong></div>
+    <ul style="color:var(--text-dim);font-size:.875rem;padding-left:1.2rem;line-height:2;">
+        {% for ind in attack_info.indicators %}
+        <li>{{ ind }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if feature_contributions %}
+    <div style="margin-top:1rem;padding:1rem;background:rgba(0,0,0,.2);border-radius:8px;">
+        <div style="color:var(--text-dim);font-size:.8rem;margin-bottom:.5rem;"><strong style="color:{{ attack_info.color }};">Your Input Values That Triggered This Detection:</strong></div>
+        {% for fc in feature_contributions %}
+        <div style="color:var(--text-light);font-size:.85rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <i class="fa fa-arrow-right me-2" style="color:{{ attack_info.color }};font-size:.7rem;"></i>{{ fc }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- LIME -->
+{% if lime_pred_img %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-magnifying-glass-chart"></i> LIME Explanation – Why this prediction?</div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+        LIME explains this specific prediction using the MLP model.
+        <span style="color:#2ecc71;">Green</span> = features supporting the prediction,
+        <span style="color:#e74c3c;">Red</span> = features opposing it.
+    </p>
+    <img src="data:image/png;base64,{{ lime_pred_img }}" class="plot-img" alt="LIME Explanation">
+</div>
+{% endif %}
+{% if lime_pred_error %}<div class="alert-xai-danger mb-3"><i class="fa fa-info-circle me-2"></i>LIME: {{ lime_pred_error }}</div>{% endif %}
+
+<!-- SHAP -->
+{% if shap_pred_img %}
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-chart-waterfall"></i> SHAP Waterfall – Feature Contributions</div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+        SHAP shows each feature's positive or negative contribution to the final prediction score.
+    </p>
+    <img src="data:image/png;base64,{{ shap_pred_img }}" class="plot-img" alt="SHAP Waterfall">
+</div>
+{% endif %}
+{% if shap_pred_error %}<div class="alert-xai-danger mb-3"><i class="fa fa-info-circle me-2"></i>SHAP: {{ shap_pred_error }}</div>{% endif %}
+
+{% endif %}{# end if prediction #}
+
+{% if pred_error %}
+<div class="alert-xai-danger mb-3"><i class="fa fa-exclamation-circle me-2"></i>{{ pred_error }}</div>
+{% endif %}
+
+<!-- Input Form -->
+{% if feature_cols %}
+<div class="xai-card">
+    <div class="xai-card-title"><i class="fa fa-sliders"></i> Enter Feature Values</div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1.5rem;">
+        Enter real-time network traffic values below. Features are automatically normalized before prediction.
+        Leave at 0 for unknown fields.
+    </p>
+    <form action="{% url 'prediction' %}" method="POST" onsubmit="showLoading()">
+        {% csrf_token %}
+        <div class="row g-3">
+            {% for feat in feature_cols %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <label class="form-label-xai" title="{{ feat }}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;">{{ feat }}</label>
+                <input type="number" name="{{ feat }}" step="any"
+                    value="{% if input_vals %}{{ input_vals|get_item:feat|default:0 }}{% else %}0{% endif %}"
+                    class="form-control-xai" style="font-size:.85rem;">
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-4 d-flex gap-3">
+            <button type="submit" class="btn-xai">
+                <i class="fa fa-bolt"></i> Run Prediction
+            </button>
+            <button type="button" class="btn-outline-xai" onclick="resetForm()">
+                <i class="fa fa-rotate-left"></i> Reset
+            </button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Last Training Results -->
+{% if acc_results %}
+<div class="xai-card mt-4">
+    <div class="xai-card-title"><i class="fa fa-chart-line"></i> Last Training Results (Hybrid Voting)</div>
+    <div class="row g-3">
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value" style="font-size:1.5rem;">{{ acc_results.accuracy }}%</div><div class="stat-label">Accuracy</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value" style="font-size:1.5rem;">{{ acc_results.precision }}%</div><div class="stat-label">Precision</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value" style="font-size:1.5rem;">{{ acc_results.recall }}%</div><div class="stat-label">Recall</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value" style="font-size:1.5rem;">{{ acc_results.f1 }}%</div><div class="stat-label">F1 Score</div></div></div>
+    </div>
+    {% if acc_results.all_metrics %}
+    <div class="mt-3">
+        <div style="color:var(--text-dim);font-size:.8rem;margin-bottom:.5rem;">Individual Algorithm Accuracy:</div>
+        <div class="row g-2">
+            {% for m in acc_results.all_metrics %}
+            <div class="col-auto">
+                <span style="background:rgba(100,255,218,.08);border:1px solid rgba(100,255,218,.2);border-radius:6px;padding:4px 10px;font-size:.8rem;color:var(--accent);">
+                    {{ m.Algorithm }}: {{ m.Accuracy }}%
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+<script>
+function resetForm() {
+    document.querySelectorAll('.form-control-xai').forEach(function(input) {
+        input.value = 0;
+    });
+}
+</script>
+
+{% endblock %}

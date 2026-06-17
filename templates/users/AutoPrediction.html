@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Auto Predict – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}" class="active"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Auto <span>Prediction</span></h1>
+    <p>Upload a CSV file exported from CICFlowMeter for automatic threat detection</p>
+</div>
+
+{% if model_error %}
+<div class="alert-xai-danger mb-4">
+    <i class="fa fa-exclamation-triangle me-2"></i>{{ model_error }}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert-xai-danger mb-4">
+    <i class="fa fa-exclamation-triangle me-2"></i>{{ error }}
+</div>
+{% endif %}
+
+<div class="xai-card mb-4">
+    <div class="xai-card-title"><i class="fa fa-file-csv"></i> Upload Traffic CSV</div>
+    <p style="color:var(--text-dim);font-size:.875rem;margin-bottom:1.5rem;">
+        Upload a CSV file containing network traffic data. 
+        The system will automatically predict each flow and detect attacks.
+    </p>
+    <form action="{% url 'auto_prediction' %}" method="POST"
+          enctype="multipart/form-data" onsubmit="showLoading()">
+        {% csrf_token %}
+        <div style="border:2px dashed rgba(100,255,218,.25);border-radius:12px;
+                    padding:2rem;text-align:center;margin-bottom:1.5rem;">
+            <i class="fa fa-cloud-upload-alt"
+               style="font-size:2.5rem;color:var(--accent);opacity:.6;margin-bottom:1rem;"></i>
+            <p style="color:var(--text-dim);margin-bottom:1rem;">
+                Upload CSV file from CICFlowMeter or your dataset
+            </p>
+            <input type="file" name="trafficfile" id="trafficFile"
+                   accept=".csv" style="display:none;" onchange="updateLabel(this)">
+            <label for="trafficFile" class="btn-outline-xai" style="cursor:pointer;">
+                <i class="fa fa-folder-open"></i> Choose CSV File
+            </label>
+            <p id="fileName" style="color:var(--accent);margin-top:1rem;
+                                    font-size:.875rem;display:none;"></p>
+        </div>
+        <button type="submit" class="btn-xai" style="width:100%;justify-content:center;">
+            <i class="fa fa-bolt"></i> Run Auto Prediction
+        </button>
+    </form>
+</div>
+
+{% if results %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Total Flows</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value" style="color:#64ffda;">{{ normal_total }}</div>
+            <div class="stat-label">Normal Traffic</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value" style="color:#ff6b6b;">{{ attack_total }}</div>
+            <div class="stat-label">Attacks Detected</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value" style="font-size:0.8rem;color:#ffa500;">{{ filename }}</div>
+            <div class="stat-label">File Uploaded</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for label, count in attack_counts.items %}
+    <div class="col-6 col-md-3">
+        <div class="xai-card" style="text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;
+                color:{% if label == 'NORMAL' %}#64ffda
+                      {% elif label == 'DDOS' %}#ff6b6b
+                      {% elif label == 'BRUTE_FORCE' %}#ffa500
+                      {% else %}#9b59b6{% endif %};">
+                {{ count }}
+            </div>
+            <div style="color:var(--text-dim);font-size:.8rem;">{{ label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="xai-card">
+    <div class="xai-card-title">
+        <i class="fa fa-table"></i> Prediction Results — {{ filename }}
+    </div>
+    <div class="table-responsive-xai" style="max-height:500px;overflow-y:auto;">
+        <table class="table table-dark table-bordered table-hover"
+               style="font-size:.875rem;">
+            <thead>
+                <tr style="color:var(--accent);">
+                    <th>#</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in results %}
+                <tr>
+                    <td style="color:var(--text-dim);">{{ r.row }}</td>
+                    <td>
+                        <i class="fa {{ r.icon }} me-2"
+                           style="color:{{ r.color }};"></i>
+                        <span style="color:{{ r.color }};font-weight:600;">
+                            {{ r.label }}
+                        </span>
+                    </td>
+                    <td style="color:var(--accent);">{{ r.confidence }}%</td>
+                    <td>
+                        {% if r.is_attack %}
+                        <span class="badge-danger">
+                            <i class="fa fa-triangle-exclamation me-1"></i>Attack
+                        </span>
+                        {% else %}
+                        <span class="badge-xai">
+                            <i class="fa fa-check me-1"></i>Normal
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateLabel(input) {
+    const label = document.getElementById('fileName');
+    if (input.files.length > 0) {
+        label.textContent = '✓ ' + input.files[0].name;
+        label.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

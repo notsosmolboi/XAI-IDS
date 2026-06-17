@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}User Home – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}" class="active"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Welcome, <span>{{ user_name }}</span> 👋</h1>
+    <p>Explore, train, and run predictions with the XAI Cyber Threat Detection System</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'ViewDataset' %}" style="text-decoration:none;">
+            <div class="xai-card" style="cursor:pointer;text-align:center;transition:.3s;" onmouseover="this.style.borderColor='rgba(100,255,218,.4)'" onmouseout="this.style.borderColor='rgba(100,255,218,.1)'">
+                <div style="font-size:2.5rem;margin-bottom:.8rem;"><i class="fa fa-table" style="color:#64ffda;"></i></div>
+                <div style="font-weight:700;font-size:1rem;color:var(--text-light);">View Dataset</div>
+                <div style="color:var(--text-dim);font-size:.8rem;margin-top:4px;">Browse network traffic data</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'upload_data' %}" style="text-decoration:none;">
+            <div class="xai-card" style="cursor:pointer;text-align:center;transition:.3s;" onmouseover="this.style.borderColor='rgba(100,255,218,.4)'" onmouseout="this.style.borderColor='rgba(100,255,218,.1)'">
+                <div style="font-size:2.5rem;margin-bottom:.8rem;"><i class="fa fa-upload" style="color:#64ffda;"></i></div>
+                <div style="font-weight:700;font-size:1rem;color:var(--text-light);">Upload Data</div>
+                <div style="color:var(--text-dim);font-size:.8rem;margin-top:4px;">Upload your own CSV dataset</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'training' %}" style="text-decoration:none;">
+            <div class="xai-card" style="cursor:pointer;text-align:center;transition:.3s;" onmouseover="this.style.borderColor='rgba(100,255,218,.4)'" onmouseout="this.style.borderColor='rgba(100,255,218,.1)'">
+                <div style="font-size:2.5rem;margin-bottom:.8rem;"><i class="fa fa-robot" style="color:#64ffda;"></i></div>
+                <div style="font-weight:700;font-size:1rem;color:var(--text-light);">Train Model</div>
+                <div style="color:var(--text-dim);font-size:.8rem;margin-top:4px;">Train RF with SHAP &amp; LIME</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'prediction' %}" style="text-decoration:none;">
+            <div class="xai-card" style="cursor:pointer;text-align:center;transition:.3s;" onmouseover="this.style.borderColor='rgba(100,255,218,.4)'" onmouseout="this.style.borderColor='rgba(100,255,218,.1)'">
+                <div style="font-size:2.5rem;margin-bottom:.8rem;"><i class="fa fa-bolt" style="color:#64ffda;"></i></div>
+                <div style="font-weight:700;font-size:1rem;color:var(--text-light);">Predict</div>
+                <div style="color:var(--text-dim);font-size:.8rem;margin-top:4px;">Run threat prediction</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="xai-card">
+    <div class="xai-card-title"><i class="fa fa-circle-info"></i> How to Use</div>
+    <ol style="color:var(--text-dim);font-size:.9rem;line-height:2;padding-left:1.2rem;">
+        <li><strong style="color:var(--text-light);">View Dataset</strong> – Explore the loaded network traffic dataset.</li>
+        <li><strong style="color:var(--text-light);">Upload Data</strong> – Optionally upload a custom CSV with a 'Label' column.</li>
+        <li><strong style="color:var(--text-light);">Train Model</strong> – Train the Random Forest model; generates SHAP &amp; LIME visualizations.</li>
+        <li><strong style="color:var(--text-light);">Predict</strong> – Enter feature values to classify network traffic and get an explanation.</li>
+    </ol>
+</div>
+{% endblock %}

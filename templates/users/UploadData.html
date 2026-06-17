@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Upload Dataset – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}" class="active"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Upload <span>Dataset</span></h1>
+    <p>Upload a CSV file with network traffic data including a 'Label' column</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        {% for message in messages %}
+        <div class="alert-xai-success mb-3">
+            <i class="fa fa-check-circle me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+
+        <!-- Current dataset indicator -->
+        <div class="xai-card mb-3" style="padding:1rem;">
+            <div style="color:var(--text-dim);font-size:.85rem;">
+                <i class="fa fa-database me-2" style="color:var(--accent);"></i>
+                Current Dataset: <strong style="color:var(--accent);">{{ dataset_name }}</strong>
+            </div>
+        </div>
+
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-file-csv"></i> Upload New CSV File</div>
+            <form action="{% url 'upload_data' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="border:2px dashed rgba(100,255,218,.25);border-radius:12px;padding:2.5rem;text-align:center;margin-bottom:1.5rem;transition:.3s;"
+                     id="dropzone">
+                    <i class="fa fa-cloud-upload-alt" style="font-size:3rem;color:var(--accent);opacity:.6;margin-bottom:1rem;"></i>
+                    <p style="color:var(--text-dim);margin-bottom:1rem;">Drag & drop your CSV file or click to browse</p>
+                    <input type="file" name="datafile" id="fileInput" accept=".csv"
+                           style="display:none;" onchange="updateLabel(this)">
+                    <label for="fileInput" class="btn-outline-xai" style="cursor:pointer;">
+                        <i class="fa fa-folder-open"></i> Choose File
+                    </label>
+                    <p id="fileName" style="color:var(--accent);margin-top:1rem;font-size:.875rem;display:none;"></p>
+                </div>
+                <div class="xai-card" style="margin-bottom:1.5rem;padding:1rem;">
+                    <div style="color:var(--text-dim);font-size:.85rem;line-height:1.8;">
+                        <strong style="color:var(--accent);">Requirements:</strong><br>
+                        • CSV format with header row<br>
+                        • Must contain a <code style="color:var(--accent);">Label</code> column<br>
+                        • Must contain these features: FlowDuration, TotalFwdPackets, TotalLengthofFwdPackets, FlowIATMean, FwdPacketLengthMean, FlowPackets_per_s, FwdHeaderLength, BwdHeaderLength, AvgFwdSegmentSize, AvgBwdSegmentSize<br>
+                        • Replaces the existing dataset — retrain after upload
+                    </div>
+                </div>
+                <button type="submit" class="btn-xai justify-content-center" style="width:100%;" onclick="showLoading()">
+                    <i class="fa fa-upload"></i> Upload Dataset
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function updateLabel(input) {
+    const label = document.getElementById('fileName');
+    if (input.files.length > 0) {
+        label.textContent = '✓ ' + input.files[0].name;
+        label.style.display = 'block';
+        document.getElementById('dropzone').style.borderColor = 'rgba(100,255,218,.5)';
+    }
+}
+</script>
+{% endblock %}

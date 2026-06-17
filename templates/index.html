@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}XAI Cyber Threat Detection – Home{% endblock %}
+{% block fullpage %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAI Cyber Threat Detection</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{--accent:#64ffda;--accent2:#00b4d8;--primary:#0a192f;--text-light:#ccd6f6;--text-dim:#8892b0;--card-bg:#112240;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--primary);color:var(--text-light);min-height:100vh;}
+/* Navbar */
+nav.topbar{background:rgba(10,25,47,0.97);border-bottom:1px solid rgba(100,255,218,0.15);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;right:0;z-index:1000;backdrop-filter:blur(10px);}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.brand .ico{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--primary);}
+.brand span{font-size:1.1rem;font-weight:700;color:var(--accent);}
+.nav-links a{color:var(--text-dim);text-decoration:none;padding:8px 14px;border-radius:6px;font-size:.875rem;font-weight:500;transition:.2s;}
+.nav-links a:hover{color:var(--accent);background:rgba(100,255,218,.08);}
+.btn-xai{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--primary);border:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;}
+.btn-xai:hover{opacity:.9;transform:translateY(-1px);color:var(--primary);}
+.btn-outline{background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:9px 22px;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;}
+.btn-outline:hover{background:rgba(100,255,218,.08);color:var(--accent);}
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;padding-top:64px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(100,255,218,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(0,180,216,.08) 0%,transparent 50%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(100,255,218,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(100,255,218,.03) 1px,transparent 1px);background-size:60px 60px;}
+.hero-content{position:relative;z-index:1;}
+.tag{display:inline-flex;align-items:center;gap:6px;background:rgba(100,255,218,.1);border:1px solid rgba(100,255,218,.25);color:var(--accent);padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:600;margin-bottom:1.5rem;}
+.hero h1{font-size:2.8 rem;font-weight:800;line-height:1.1;margin-bottom:1.5rem;}
+.hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero p{color:var(--text-dim);font-size:1.1rem;line-height:1.7;max-width:540px;margin-bottom:2rem;}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap;}
+/* Features */
+.features{padding:5rem 0;background:rgba(17,34,64,.4);}
+.section-tag{color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1rem;}
+.feature-card{background:var(--card-bg);border:1px solid rgba(100,255,218,.1);border-radius:14px;padding:1.8rem;transition:.3s;}
+.feature-card:hover{border-color:rgba(100,255,218,.3);transform:translateY(-4px);}
+.feature-icon{width:48px;height:48px;background:linear-gradient(135deg,rgba(100,255,218,.15),rgba(0,180,216,.15));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--accent);margin-bottom:1rem;}
+.feature-card h4{font-size:1rem;font-weight:700;margin-bottom:.6rem;color:var(--text-light);}
+.feature-card p{color:var(--text-dim);font-size:.875rem;line-height:1.6;}
+/* Stats */
+.stats-section{padding:4rem 0;}
+.stat-item{text-align:center;}
+.stat-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.stat-lbl{color:var(--text-dim);font-size:.875rem;margin-top:4px;}
+/* Footer */
+footer{background:rgba(10,25,47,.9);border-top:1px solid rgba(100,255,218,.1);padding:2rem 0;text-align:center;color:var(--text-dim);font-size:.85rem;}
+</style>
+</head>
+<body>
+<nav class="topbar">
+    <a href="/" class="brand">
+        <div class="ico"><i class="fa fa-shield-halved"></i></div>
+        <span>XAI Threat Detect</span>
+    </a>
+    <div class="nav-links d-flex gap-1">
+        <a href="/">Home</a>
+        <a href="/AdminLogincheck">Admin</a>
+        <a href="/UserLogin">User Login</a>
+        <a href="/UserRegisterForm">Register</a>
+    </div>
+    <div></div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-grid"></div>
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="tag"><i class="fa fa-bolt"></i> Explainable AI System</div>
+                <h1>Improving Transparency in <span>IDS</span> Through<span> LIME </span>and <span>SHAP</span>-Based Explanation of <span>MLP Models</span></h1>
+                <p>An advanced Intrusion Detection System powered by Random Forest,MLP using tools SHAP, and LIME — providing not just predictions, but transparent, human-interpretable explanations for every decision.</p>
+                <div class="hero-actions">
+                    <a href="/UserLogin" class="btn-xai"><i class="fa fa-sign-in-alt"></i> User Login</a>
+                    <a href="/AdminLogincheck" class="btn-outline"><i class="fa fa-user-shield"></i> Admin Panel</a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+                <div style="width:360px;height:360px;border:1px solid rgba(100,255,218,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
+                    <div style="width:280px;height:280px;border:1px solid rgba(100,255,218,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pulse 3s ease-in-out infinite;">
+                        <i class="fa fa-shield-halved" style="font-size:100px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
+                    </div>
+                    <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:1px solid rgba(100,255,218,.3);padding:8px 14px;border-radius:8px;font-size:.8rem;color:var(--accent);white-space:nowrap;"><i class="fa fa-shield-halved me-1"></i>IDS</div>
+<div style="position:absolute;top:50px;right:-10px;background:var(--card-bg);border:1px solid rgba(100,255,218,.3);padding:8px 14px;border-radius:8px;font-size:.8rem;color:var(--accent);white-space:nowrap;"><i class="fa fa-chart-bar me-1"></i>SHAP</div>
+<div style="position:absolute;bottom:50px;right:-10px;background:var(--card-bg);border:1px solid rgba(100,255,218,.3);padding:8px 14px;border-radius:8px;font-size:.8rem;color:var(--accent);white-space:nowrap;"><i class="fa fa-magnifying-glass me-1"></i>LIME</div>
+<div style="position:absolute;bottom:50px;left:-10px;background:var(--card-bg);border:1px solid rgba(100,255,218,.3);padding:8px 14px;border-radius:8px;font-size:.8rem;color:var(--accent);white-space:nowrap;"><i class="fa fa-tree me-1"></i>Random Forest</div>
+<div style="position:absolute;top:50px;left:-10px;background:var(--card-bg);border:1px solid rgba(100,255,218,.3);padding:8px 14px;border-radius:8px;font-size:.8rem;color:var(--accent);white-space:nowrap;"><i class="fa fa-brain me-1"></i>MLP</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3"><div class="stat-num">98%+</div><div class="stat-lbl">Detection Accuracy</div></div>
+            <div class="col-6 col-md-3"><div class="stat-num">SHAP</div><div class="stat-lbl">Feature Explanations</div></div>
+            <div class="col-6 col-md-3"><div class="stat-num">LIME</div><div class="stat-lbl">Instance Explanations</div></div>
+            <div class="col-6 col-md-3"><div class="stat-num">RF</div><div class="stat-lbl">Random Forest Model</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="features">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-tag">Capabilities</div>
+            <h2 style="font-size:2rem;font-weight:700;">What This System Offers</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-brain"></i></div>
+                <h4>ML-Powered Detection</h4>
+                <p>Random Forest classifier and MLPmodel trained on the CIC-IDS2017 dataset to detect multiple attack types with high accuracy.</p>
+            </div></div>
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-chart-bar"></i></div>
+                <h4>SHAP Explanations</h4>
+                <p>SHapley Additive exPlanations provide global and per-instance feature importance using game-theory-based attribution.</p>
+            </div></div>
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-magnifying-glass-chart"></i></div>
+                <h4>LIME Explanations</h4>
+                <p>Local Interpretable Model-agnostic Explanations explain individual predictions with locally faithful surrogate models.</p>
+            </div></div>
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-upload"></i></div>
+                <h4>Dataset Management</h4>
+                <p>Upload and manage your own network traffic dataset in CSV format for custom training.</p>
+            </div></div>
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-users-cog"></i></div>
+                <h4>Role-Based Access</h4>
+                <p>Separate admin and user portals with account activation control for secure multi-user access.</p>
+            </div></div>
+            <div class="col-md-4"><div class="feature-card">
+                <div class="feature-icon"><i class="fa fa-table"></i></div>
+                <h4>Dataset Visualization</h4>
+                <p>Browse and explore the network traffic dataset with class distribution and feature statistics.</p>
+            </div></div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2024 XAI Cyber Threat Detection System. Built with Django &amp; Explainable AI.</p>
+</footer>
+
+<style>@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}</style>
+</body>
+</html>
+{% endblock %}

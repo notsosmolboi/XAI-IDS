@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}User Registration – XAI Threat Detect{% endblock %}
+{% block fullpage %}
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width:460px;">
+        <div class="logo-area">
+            <div class="icon"><i class="fa fa-user-plus"></i></div>
+            <h2>Create Account</h2>
+            <p>Register to access the XAI detection system</p>
+        </div>
+        {% for message in messages %}
+        <div class="alert-xai-{% if message.tags == 'error' %}danger{% else %}success{% endif %} mb-3">
+            <i class="fa fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %} me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+        <form action="{% url 'UserRegisterForm' %}" method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom:1.1rem;">
+                <label class="form-label-xai">Full Name</label>
+                <input type="text" name="txtName" placeholder="Enter your full name" class="form-control-xai" required>
+            </div>
+            <div style="margin-bottom:1.1rem;">
+                <label class="form-label-xai">Email Address</label>
+                <input type="email" name="txtEmail" placeholder="Enter your email" class="form-control-xai" required>
+            </div>
+            <div style="margin-bottom:1.1rem;">
+                <label class="form-label-xai">Mobile Number</label>
+                <input type="tel" name="txtMobile" placeholder="Enter mobile number" class="form-control-xai" required>
+            </div>
+            <div style="margin-bottom:1.8rem;">
+                <label class="form-label-xai">Password</label>
+                <input type="password" name="txtPassword" placeholder="Create a password" class="form-control-xai" required>
+            </div>
+            <button type="submit" class="btn-xai justify-content-center" style="width:100%;">
+                <i class="fa fa-user-plus"></i> Register
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:1.5rem;display:flex;flex-direction:column;gap:8px;">
+            <p style="color:var(--text-dim);font-size:.85rem;">Already have an account?
+                <a href="{% url 'UserLogin' %}" style="color:var(--accent);text-decoration:none;">Login here</a>
+            </p>
+            <a href="/" style="color:var(--text-dim);font-size:.85rem;text-decoration:none;">
+                <i class="fa fa-arrow-left me-1"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% block extra_css %}
+<style>
+.auth-wrapper { display:flex!important; }
+.form-control-xai { color: var(--text-light) !important; }
+.form-control-xai::placeholder { color: var(--text-dim); }
+</style>
+{% endblock %}
+{% endblock %}

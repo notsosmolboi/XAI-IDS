@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}View Dataset – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}" class="active"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Network Traffic <span>Dataset</span></h1>
+    {% if shape_info %}<p>{{ shape_info }}</p>{% endif %}
+</div>
+
+{% if label_counts %}
+<div class="row g-3 mb-4">
+    {% for label, count in label_counts.items %}
+    <div class="col-6 col-md-3 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-value" style="font-size:1.4rem;">{{ count }}</div>
+            <div class="stat-label">{{ label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="xai-card">
+    <div class="xai-card-title"><i class="fa fa-table"></i> Dataset Preview</div>
+    {% if data_html %}
+    <div class="table-responsive-xai" style="max-height:500px;overflow-y:auto;">
+        {{ data_html|safe }}
+    </div>
+    {% else %}
+    <p style="color:var(--text-dim);">No data available. Please upload a dataset first.</p>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+.table th { background: rgba(100,255,218,.08) !important; color: #64ffda !important; font-size:.75rem; font-weight:600; text-transform:uppercase; border-color: rgba(100,255,218,.1) !important; }
+.table td { color: #ccd6f6; border-color: rgba(255,255,255,.05) !important; font-size:.8rem; }
+.table tr:hover td { background: rgba(100,255,218,.04); }
+.table { color: #ccd6f6; }
+</style>
+{% endblock %}

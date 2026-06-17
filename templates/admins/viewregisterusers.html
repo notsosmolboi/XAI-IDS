@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'adminhome' %}"><i class="fa fa-gauge me-1"></i>Dashboard</a>
+    <a href="{% url 'RegisterUsersView' %}" class="active"><i class="fa fa-users me-1"></i>Manage Users</a>
+    <a href="/"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Registered <span>Users</span></h1>
+    <p>Activate or remove user accounts</p>
+</div>
+
+<div class="xai-card">
+    <div class="xai-card-title"><i class="fa fa-users"></i> User List</div>
+    {% if data %}
+    <div class="table-responsive-xai">
+        <table class="table table-xai">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for user in data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td style="color:var(--text-light);">{{ user.name }}</td>
+                    <td style="color:var(--text-dim);">{{ user.email }}</td>
+                    <td style="color:var(--text-dim);">{{ user.mobile }}</td>
+                    <td>
+                        {% if user.status == 'activated' %}
+                            <span class="badge-xai"><i class="fa fa-check me-1"></i>Activated</span>
+                        {% else %}
+                            <span class="badge-danger"><i class="fa fa-clock me-1"></i>Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            {% if user.status != 'activated' %}
+                            <a href="{% url 'activate_users' %}?uid={{ user.id }}"
+                               style="background:rgba(100,255,218,.1);border:1px solid rgba(100,255,218,.3);color:var(--accent);padding:5px 12px;border-radius:6px;font-size:.8rem;text-decoration:none;transition:.2s;"
+                               onmouseover="this.style.background='rgba(100,255,218,.2)'"
+                               onmouseout="this.style.background='rgba(100,255,218,.1)'"
+                               onclick="return confirm('Activate this user?')">
+                                <i class="fa fa-check me-1"></i>Activate
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'delete_users' %}?uid={{ user.id }}"
+                               style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:#ff6b6b;padding:5px 12px;border-radius:6px;font-size:.8rem;text-decoration:none;transition:.2s;"
+                               onmouseover="this.style.background='rgba(255,107,107,.2)'"
+                               onmouseout="this.style.background='rgba(255,107,107,.1)'"
+                               onclick="return confirm('Delete this user?')">
+                                <i class="fa fa-trash me-1"></i>Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:3rem;color:var(--text-dim);">
+        <i class="fa fa-users" style="font-size:2.5rem;margin-bottom:1rem;opacity:.4;"></i>
+        <p>No registered users yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

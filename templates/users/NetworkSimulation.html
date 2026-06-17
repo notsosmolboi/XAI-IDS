@@ -1,0 +1,1036 @@
+{% extends 'base.html' %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'UserHome' %}"><i class="fa fa-gauge me-1"></i>Home</a>
+    <a href="{% url 'ViewDataset' %}"><i class="fa fa-table me-1"></i>Dataset</a>
+    <a href="{% url 'upload_data' %}"><i class="fa fa-upload me-1"></i>Upload Data</a>
+    <a href="{% url 'training' %}"><i class="fa fa-robot me-1"></i>Train Model</a>
+    <a href="{% url 'prediction' %}"><i class="fa fa-bolt me-1"></i>Predict</a>
+    <a href="{% url 'auto_prediction' %}"><i class="fa fa-network-wired me-1"></i>Auto Predict</a>
+    <a href="{% url 'network_simulation' %}" class="active"><i class="fa fa-circle-nodes me-1"></i>Network Sim</a>
+    <a href="{% url 'UserLogout' %}"><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Simulation - XAI IDS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020c1b;
+    --panel: #0a1628;
+    --border: #1a3a5c;
+    --cyan: #00f5ff;
+    --green: #00ff88;
+    --red: #ff2d55;
+    --orange: #ff9500;
+    --purple: #bf5af2;
+    --yellow: #ffd60a;
+    --text: #ccd6f6;
+    --dim: #495670;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 20px 0 30px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 25px;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(0,245,255,0.5);
+    letter-spacing: 4px;
+  }
+
+  .header p {
+    color: var(--dim);
+    margin-top: 8px;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 140px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+  }
+
+  .stat-card.normal::before { background: var(--green); }
+  .stat-card.ddos::before { background: var(--red); }
+  .stat-card.brute::before { background: var(--orange); }
+  .stat-card.bot::before { background: var(--purple); }
+  .stat-card.total::before { background: var(--cyan); }
+
+  .stat-card .label {
+    font-size: 0.7rem;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card .value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .stat-card.normal .value { color: var(--green); }
+  .stat-card.ddos .value { color: var(--red); }
+  .stat-card.brute .value { color: var(--orange); }
+  .stat-card.bot .value { color: var(--purple); }
+  .stat-card.total .value { color: var(--cyan); }
+
+  /* Main layout */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Network Canvas */
+  .canvas-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .canvas-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .canvas-header h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--cyan);
+    letter-spacing: 2px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--green);
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse-dot 1s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  #networkCanvas {
+    display: block;
+    width: 100%;
+    height: 500px;
+  }
+
+  /* Controls panel */
+  .controls-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-section {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-section h4 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .attack-btn {
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border: 1px solid;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .attack-btn:hover { transform: translateX(3px); }
+
+  .attack-btn.ddos { color: var(--red); border-color: var(--red); }
+  .attack-btn.ddos:hover { background: rgba(255,45,85,0.15); box-shadow: 0 0 15px rgba(255,45,85,0.3); }
+
+  .attack-btn.brute { color: var(--orange); border-color: var(--orange); }
+  .attack-btn.brute:hover { background: rgba(255,149,0,0.15); box-shadow: 0 0 15px rgba(255,149,0,0.3); }
+
+  .attack-btn.bot { color: var(--purple); border-color: var(--purple); }
+  .attack-btn.bot:hover { background: rgba(191,90,242,0.15); box-shadow: 0 0 15px rgba(191,90,242,0.3); }
+
+  .attack-btn.normal { color: var(--green); border-color: var(--green); }
+  .attack-btn.normal:hover { background: rgba(0,255,136,0.15); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+
+  .attack-btn.auto { color: var(--cyan); border-color: var(--cyan); }
+  .attack-btn.auto:hover { background: rgba(0,245,255,0.15); }
+
+  .stop-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255,45,85,0.2);
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    color: var(--red);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+  }
+
+  .stop-btn:hover { background: rgba(255,45,85,0.4); }
+
+  /* Speed control */
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .speed-control label { font-size: 0.75rem; color: var(--dim); }
+
+  .speed-control input[type=range] {
+    flex: 1;
+    accent-color: var(--cyan);
+  }
+
+  .speed-val {
+    font-size: 0.75rem;
+    color: var(--cyan);
+    min-width: 30px;
+  }
+
+  /* Attack info */
+  .attack-info {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+  }
+
+  .attack-info h4 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .info-card {
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    display: none;
+  }
+
+  .info-card.active { display: block; }
+
+  .info-card.ddos { border-color: var(--red); background: rgba(255,45,85,0.08); }
+  .info-card.brute { border-color: var(--orange); background: rgba(255,149,0,0.08); }
+  .info-card.bot { border-color: var(--purple); background: rgba(191,90,242,0.08); }
+  .info-card.normal { border-color: var(--green); background: rgba(0,255,136,0.08); }
+
+  .info-card .title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  .info-card.ddos .title { color: var(--red); }
+  .info-card.brute .title { color: var(--orange); }
+  .info-card.bot .title { color: var(--purple); }
+  .info-card.normal .title { color: var(--green); }
+
+  .info-card .detail { color: var(--dim); margin-bottom: 4px; }
+  .info-card .detail span { color: var(--text); }
+
+  /* Log panel */
+  .log-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .log-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .log-header h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--cyan);
+    letter-spacing: 2px;
+  }
+
+  .clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  #alertLog {
+    height: 180px;
+    overflow-y: auto;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log-entry {
+    padding: 5px 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-entry .time { color: var(--dim); min-width: 65px; }
+  .log-entry .type-badge {
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-family: 'Orbitron', monospace;
+    min-width: 65px;
+    text-align: center;
+  }
+
+  .log-entry.attack-ddos { background: rgba(255,45,85,0.06); }
+  .log-entry.attack-ddos .type-badge { background: rgba(255,45,85,0.3); color: var(--red); }
+
+  .log-entry.attack-brute { background: rgba(255,149,0,0.06); }
+  .log-entry.attack-brute .type-badge { background: rgba(255,149,0,0.3); color: var(--orange); }
+
+  .log-entry.attack-bot { background: rgba(191,90,242,0.06); }
+  .log-entry.attack-bot .type-badge { background: rgba(191,90,242,0.3); color: var(--purple); }
+
+  .log-entry.normal { background: rgba(0,255,136,0.04); }
+  .log-entry.normal .type-badge { background: rgba(0,255,136,0.2); color: var(--green); }
+
+  .log-entry .msg { color: var(--text); flex: 1; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--dim);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Alert overlay */
+  .alert-overlay {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .alert-popup {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.8rem;
+    min-width: 280px;
+    animation: alertIn 0.3s ease, alertOut 0.3s ease 2.7s forwards;
+    border-left: 4px solid;
+    pointer-events: all;
+  }
+
+  .alert-popup.ddos { border-color: var(--red); box-shadow: 0 0 20px rgba(255,45,85,0.3); }
+  .alert-popup.brute { border-color: var(--orange); box-shadow: 0 0 20px rgba(255,149,0,0.3); }
+  .alert-popup.bot { border-color: var(--purple); box-shadow: 0 0 20px rgba(191,90,242,0.3); }
+
+  .alert-popup .alert-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .alert-popup.ddos .alert-title { color: var(--red); }
+  .alert-popup.brute .alert-title { color: var(--orange); }
+  .alert-popup.bot .alert-title { color: var(--purple); }
+
+  .alert-popup .alert-msg { color: var(--dim); font-size: 0.72rem; }
+
+  @keyframes alertIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes alertOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(30px); }
+  }
+
+  /* Responsive */
+  @media (max-width: 1000px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="alert-overlay" id="alertOverlay"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>⬡ NETWORK SIMULATION</h1>
+    <p>REAL-TIME ATTACK VISUALIZATION & DETECTION SYSTEM</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="status-bar">
+    <div class="stat-card total">
+      <div class="label">TOTAL PACKETS</div>
+      <div class="value" id="totalCount">0</div>
+    </div>
+    <div class="stat-card normal">
+      <div class="label">NORMAL</div>
+      <div class="value" id="normalCount">0</div>
+    </div>
+    <div class="stat-card ddos">
+      <div class="label">DDOS</div>
+      <div class="value" id="ddosCount">0</div>
+    </div>
+    <div class="stat-card brute">
+      <div class="label">BRUTE FORCE</div>
+      <div class="value" id="bruteCount">0</div>
+    </div>
+    <div class="stat-card bot">
+      <div class="label">BOT</div>
+      <div class="value" id="botCount">0</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- Network Canvas -->
+    <div class="canvas-panel">
+      <div class="canvas-header">
+        <h3>◈ NETWORK TOPOLOGY</h3>
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          MONITORING ACTIVE
+        </div>
+      </div>
+      <canvas id="networkCanvas"></canvas>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div> Normal Traffic</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff2d55"></div> DDoS Attack</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff9500"></div> Brute Force</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#bf5af2"></div> Bot Activity</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00f5ff; border-radius:2px"></div> Server/Router</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffd60a; border-radius:2px"></div> Client Device</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-panel">
+      <div class="panel-section">
+        <h4>◈ SIMULATE ATTACK</h4>
+        <button class="attack-btn ddos" onclick="simulateAttack('DDOS')">
+          🔴 SIMULATE DDOS ATTACK
+        </button>
+        <button class="attack-btn brute" onclick="simulateAttack('BRUTE_FORCE')">
+          🟠 SIMULATE BRUTE FORCE
+        </button>
+        <button class="attack-btn bot" onclick="simulateAttack('BOT')">
+          🟣 SIMULATE BOT ATTACK
+        </button>
+        <button class="attack-btn normal" onclick="simulateAttack('NORMAL')">
+          🟢 SIMULATE NORMAL TRAFFIC
+        </button>
+        <hr style="border-color:var(--border);margin:10px 0">
+        <button class="attack-btn auto" onclick="toggleAuto()" id="autoBtn">
+          ⚡ START AUTO SIMULATION
+        </button>
+        <button class="stop-btn" onclick="stopAll()">■ STOP ALL</button>
+        <div class="speed-control">
+          <label>SPEED</label>
+          <input type="range" min="1" max="5" value="2" id="speedSlider" oninput="updateSpeed(this.value)">
+          <span class="speed-val" id="speedVal">2x</span>
+        </div>
+      </div>
+
+      <div class="attack-info">
+        <h4>◈ ATTACK DETAILS</h4>
+
+        <div class="info-card normal active" id="info-NORMAL">
+          <div class="title">✓ NORMAL TRAFFIC</div>
+          <div class="detail">Type: <span>Legitimate Network Flow</span></div>
+          <div class="detail">Pattern: <span>Regular HTTP/HTTPS requests</span></div>
+          <div class="detail">Packets/s: <span>10 - 150</span></div>
+          <div class="detail">Duration: <span>100K - 500K μs</span></div>
+          <div class="detail">Risk: <span style="color:var(--green)">NONE</span></div>
+          <div class="detail" style="margin-top:8px;color:var(--text)">Standard client-server communication with expected behavior patterns.</div>
+        </div>
+
+        <div class="info-card ddos" id="info-DDOS">
+          <div class="title">⚠ DDOS ATTACK</div>
+          <div class="detail">Type: <span>Distributed Denial of Service</span></div>
+          <div class="detail">Pattern: <span>Massive simultaneous requests</span></div>
+          <div class="detail">Packets/s: <span>5,000 - 15,000</span></div>
+          <div class="detail">Duration: <span>1K - 10K μs (very short)</span></div>
+          <div class="detail">Risk: <span style="color:var(--red)">CRITICAL</span></div>
+          <div class="detail" style="margin-top:8px;color:var(--text)">Multiple attackers flood the server with requests to make it unavailable to legitimate users.</div>
+        </div>
+
+        <div class="info-card brute" id="info-BRUTE_FORCE">
+          <div class="title">⚠ BRUTE FORCE</div>
+          <div class="detail">Type: <span>Password/Auth Attack</span></div>
+          <div class="detail">Pattern: <span>Repeated login attempts</span></div>
+          <div class="detail">Packets/s: <span>200 - 800</span></div>
+          <div class="detail">Duration: <span>20K - 100K μs</span></div>
+          <div class="detail">Risk: <span style="color:var(--orange)">HIGH</span></div>
+          <div class="detail" style="margin-top:8px;color:var(--text)">Attacker tries thousands of password combinations to gain unauthorized access to accounts.</div>
+        </div>
+
+        <div class="info-card bot" id="info-BOT">
+          <div class="title">⚠ BOT ACTIVITY</div>
+          <div class="detail">Type: <span>Automated Bot Network</span></div>
+          <div class="detail">Pattern: <span>Slow persistent connections</span></div>
+          <div class="detail">Packets/s: <span>1 - 30</span></div>
+          <div class="detail">Duration: <span>600K - 2000K μs (very long)</span></div>
+          <div class="detail">Risk: <span style="color:var(--purple)">MEDIUM-HIGH</span></div>
+          <div class="detail" style="margin-top:8px;color:var(--text)">Compromised devices controlled by attacker for data theft, spam, or coordinated attacks.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Log -->
+  <div class="log-panel">
+    <div class="log-header">
+      <h3>◈ DETECTION LOG</h3>
+      <button class="clear-btn" onclick="clearLog()">CLEAR</button>
+    </div>
+    <div id="alertLog"></div>
+  </div>
+</div>
+
+<script>
+// ─── Canvas Setup ───────────────────────────────────────────────────
+const canvas = document.getElementById('networkCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); initNodes(); });
+
+// ─── Colors ─────────────────────────────────────────────────────────
+const COLORS = {
+  NORMAL: '#00ff88',
+  DDOS: '#ff2d55',
+  BRUTE_FORCE: '#ff9500',
+  BOT: '#bf5af2'
+};
+
+// ─── Network Nodes ──────────────────────────────────────────────────
+let nodes = [];
+let packets = [];
+let animId;
+let autoInterval = null;
+let simSpeed = 2;
+let isAuto = false;
+
+// Counters
+let counts = { total: 0, NORMAL: 0, DDOS: 0, BRUTE_FORCE: 0, BOT: 0 };
+
+function initNodes() {
+  const W = canvas.width, H = canvas.height;
+  nodes = [
+    // Central server
+    { id: 0, x: W/2, y: H/2, type: 'server', label: 'MAIN SERVER', radius: 22 },
+    // Routers
+    { id: 1, x: W*0.25, y: H*0.3, type: 'router', label: 'ROUTER-1', radius: 16 },
+    { id: 2, x: W*0.75, y: H*0.3, type: 'router', label: 'ROUTER-2', radius: 16 },
+    { id: 3, x: W*0.25, y: H*0.7, type: 'router', label: 'ROUTER-3', radius: 16 },
+    { id: 4, x: W*0.75, y: H*0.7, type: 'router', label: 'ROUTER-4', radius: 16 },
+    // Client devices
+    { id: 5, x: W*0.08, y: H*0.15, type: 'client', label: 'PC-01', radius: 10 },
+    { id: 6, x: W*0.18, y: H*0.08, type: 'client', label: 'PC-02', radius: 10 },
+    { id: 7, x: W*0.35, y: H*0.1, type: 'client', label: 'PC-03', radius: 10 },
+    { id: 8, x: W*0.65, y: H*0.1, type: 'client', label: 'PC-04', radius: 10 },
+    { id: 9, x: W*0.82, y: H*0.08, type: 'client', label: 'PC-05', radius: 10 },
+    { id: 10, x: W*0.92, y: H*0.15, type: 'client', label: 'PC-06', radius: 10 },
+    { id: 11, x: W*0.08, y: H*0.85, type: 'client', label: 'PC-07', radius: 10 },
+    { id: 12, x: W*0.18, y: H*0.92, type: 'client', label: 'PC-08', radius: 10 },
+    { id: 13, x: W*0.35, y: H*0.9, type: 'client', label: 'PC-09', radius: 10 },
+    { id: 14, x: W*0.65, y: H*0.9, type: 'client', label: 'PC-10', radius: 10 },
+    { id: 15, x: W*0.82, y: H*0.92, type: 'client', label: 'PC-11', radius: 10 },
+    { id: 16, x: W*0.92, y: H*0.85, type: 'client', label: 'PC-12', radius: 10 },
+    // Attackers (shown in red)
+    { id: 17, x: W*0.05, y: H*0.5, type: 'attacker', label: 'ATTACKER', radius: 12 },
+    { id: 18, x: W*0.95, y: H*0.5, type: 'attacker', label: 'ATTACKER', radius: 12 },
+  ];
+}
+
+initNodes();
+
+// Edges between nodes
+const edges = [
+  [0,1],[0,2],[0,3],[0,4],
+  [1,5],[1,6],[1,7],
+  [2,8],[2,9],[2,10],
+  [3,11],[3,12],[3,13],
+  [4,14],[4,15],[4,16],
+  [1,2],[3,4],[1,3],[2,4]
+];
+
+// ─── Packet class ────────────────────────────────────────────────────
+class Packet {
+  constructor(fromNode, toNode, type) {
+    this.from = fromNode;
+    this.to = toNode;
+    this.type = type;
+    this.x = fromNode.x;
+    this.y = fromNode.y;
+    this.progress = 0;
+    this.speed = (0.008 + Math.random() * 0.012) * simSpeed;
+    this.color = COLORS[type];
+    this.size = type === 'DDOS' ? 5 : type === 'BOT' ? 3 : 4;
+    this.alive = true;
+    this.trail = [];
+  }
+
+  update() {
+    this.progress += this.speed;
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 8) this.trail.shift();
+
+    this.x = this.from.x + (this.to.x - this.from.x) * this.progress;
+    this.y = this.from.y + (this.to.y - this.from.y) * this.progress;
+
+    if (this.progress >= 1) {
+      this.alive = false;
+      // Flash target node
+      this.to.flash = { color: this.color, timer: 15 };
+    }
+  }
+
+  draw() {
+    // Trail
+    for (let i = 0; i < this.trail.length; i++) {
+      const alpha = (i / this.trail.length) * 0.4;
+      ctx.beginPath();
+      ctx.arc(this.trail[i].x, this.trail[i].y, this.size * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + Math.floor(alpha * 255).toString(16).padStart(2,'0');
+      ctx.fill();
+    }
+
+    // Glow
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ─── Draw Functions ──────────────────────────────────────────────────
+function drawEdge(n1, n2) {
+  ctx.beginPath();
+  ctx.moveTo(n1.x, n1.y);
+  ctx.lineTo(n2.x, n2.y);
+  ctx.strokeStyle = 'rgba(26,58,92,0.8)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawNode(node) {
+  const isFlashing = node.flash && node.flash.timer > 0;
+  const flashColor = isFlashing ? node.flash.color : null;
+
+  // Glow
+  if (isFlashing) {
+    ctx.shadowColor = flashColor;
+    ctx.shadowBlur = 25;
+  } else if (node.type === 'server') {
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 20;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.beginPath();
+
+  if (node.type === 'server') {
+    // Diamond shape
+    ctx.moveTo(node.x, node.y - node.radius);
+    ctx.lineTo(node.x + node.radius, node.y);
+    ctx.lineTo(node.x, node.y + node.radius);
+    ctx.lineTo(node.x - node.radius, node.y);
+    ctx.closePath();
+    ctx.fillStyle = flashColor || '#0a3060';
+    ctx.fill();
+    ctx.strokeStyle = flashColor || '#00f5ff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else if (node.type === 'router') {
+    // Square
+    ctx.rect(node.x - node.radius, node.y - node.radius, node.radius * 2, node.radius * 2);
+    ctx.fillStyle = flashColor ? flashColor + '33' : '#0a2040';
+    ctx.fill();
+    ctx.strokeStyle = flashColor || '#1a5080';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else if (node.type === 'attacker') {
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,45,85,0.2)';
+    ctx.fill();
+    ctx.strokeStyle = '#ff2d55';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else {
+    // Circle for clients
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.fillStyle = flashColor ? flashColor + '22' : '#051020';
+    ctx.fill();
+    ctx.strokeStyle = flashColor || '#ffd60a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  ctx.shadowBlur = 0;
+
+  // Label
+  ctx.font = '8px Share Tech Mono';
+  ctx.fillStyle = node.type === 'attacker' ? '#ff2d55' : 
+                  node.type === 'server' ? '#00f5ff' : '#495670';
+  ctx.textAlign = 'center';
+  ctx.fillText(node.label, node.x, node.y + node.radius + 12);
+
+  // Decrement flash
+  if (node.flash && node.flash.timer > 0) node.flash.timer--;
+}
+
+// ─── Animation Loop ──────────────────────────────────────────────────
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw edges
+  edges.forEach(([a, b]) => drawEdge(nodes[a], nodes[b]));
+
+  // Draw nodes
+  nodes.forEach(drawNode);
+
+  // Update & draw packets
+  packets = packets.filter(p => p.alive);
+  packets.forEach(p => { p.update(); p.draw(); });
+
+  animId = requestAnimationFrame(animate);
+}
+
+animate();
+
+// ─── Simulate Attack ─────────────────────────────────────────────────
+function simulateAttack(type) {
+  // Show info card
+  document.querySelectorAll('.info-card').forEach(c => c.classList.remove('active'));
+  const infoKey = type === 'BRUTE_FORCE' ? 'info-BRUTE_FORCE' : `info-${type}`;
+  const card = document.getElementById(infoKey);
+  if (card) card.classList.add('active');
+
+  const count = type === 'DDOS' ? 25 : type === 'BOT' ? 8 : type === 'BRUTE_FORCE' ? 15 : 10;
+  const attackers = nodes.filter(n => n.type === 'attacker');
+  const clients = nodes.filter(n => n.type === 'client');
+  const routers = nodes.filter(n => n.type === 'router');
+  const server = nodes[0];
+
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      let from, to;
+      if (type === 'DDOS') {
+        // Many sources → server
+        from = Math.random() < 0.4 ? attackers[Math.floor(Math.random() * attackers.length)]
+               : clients[Math.floor(Math.random() * clients.length)];
+        to = Math.random() < 0.6 ? server : routers[Math.floor(Math.random() * routers.length)];
+      } else if (type === 'BRUTE_FORCE') {
+        // One attacker → server repeatedly
+        from = attackers[0];
+        to = Math.random() < 0.7 ? server : routers[Math.floor(Math.random() * routers.length)];
+      } else if (type === 'BOT') {
+        // Clients acting as bots → various targets
+        from = clients[Math.floor(Math.random() * clients.length)];
+        to = Math.random() < 0.5 ? server : clients[Math.floor(Math.random() * clients.length)];
+      } else {
+        // Normal: random client → router → server
+        from = clients[Math.floor(Math.random() * clients.length)];
+        to = Math.random() < 0.5 ? routers[Math.floor(Math.random() * routers.length)] : server;
+      }
+
+      if (from && to && from !== to) {
+        packets.push(new Packet(from, to, type));
+      }
+    }, i * (type === 'DDOS' ? 60 : type === 'BRUTE_FORCE' ? 100 : 150));
+  }
+
+  // Update counters
+  counts.total += count;
+  if (type === 'NORMAL') counts.NORMAL += count;
+  else if (type === 'DDOS') counts.DDOS += count;
+  else if (type === 'BRUTE_FORCE') counts.BRUTE_FORCE += count;
+  else if (type === 'BOT') counts.BOT += count;
+  updateCounters();
+
+  // Log entry
+  addLog(type, count);
+
+  // Alert popup for attacks
+  if (type !== 'NORMAL') showAlert(type);
+}
+
+// ─── Update Counters ─────────────────────────────────────────────────
+function updateCounters() {
+  document.getElementById('totalCount').textContent = counts.total;
+  document.getElementById('normalCount').textContent = counts.NORMAL;
+  document.getElementById('ddosCount').textContent = counts.DDOS;
+  document.getElementById('bruteCount').textContent = counts.BRUTE_FORCE;
+  document.getElementById('botCount').textContent = counts.BOT;
+}
+
+// ─── Log Entry ───────────────────────────────────────────────────────
+function addLog(type, count) {
+  const log = document.getElementById('alertLog');
+  const now = new Date();
+  const time = now.toTimeString().slice(0,8);
+  const cls = type === 'NORMAL' ? 'normal' : 
+              type === 'DDOS' ? 'attack-ddos' :
+              type === 'BRUTE_FORCE' ? 'attack-brute' : 'attack-bot';
+  const label = type === 'BRUTE_FORCE' ? 'BRUTE' : type;
+  const msg = type === 'NORMAL' ? `${count} normal packets routed successfully` :
+              type === 'DDOS' ? `⚠ DDOS flood detected! ${count} malicious packets intercepted` :
+              type === 'BRUTE_FORCE' ? `⚠ Brute force attempt! ${count} auth packets blocked` :
+              `⚠ Bot activity detected! ${count} suspicious packets flagged`;
+
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${cls}`;
+  entry.innerHTML = `
+    <span class="time">${time}</span>
+    <span class="type-badge">${label}</span>
+    <span class="msg">${msg}</span>
+  `;
+  log.prepend(entry);
+
+  // Keep max 50 entries
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+function clearLog() {
+  document.getElementById('alertLog').innerHTML = '';
+}
+
+// ─── Alert Popup ─────────────────────────────────────────────────────
+function showAlert(type) {
+  const overlay = document.getElementById('alertOverlay');
+  const popup = document.createElement('div');
+  popup.className = `alert-popup ${type === 'DDOS' ? 'ddos' : type === 'BRUTE_FORCE' ? 'brute' : 'bot'}`;
+
+  const msgs = {
+    DDOS: { title: '🔴 DDOS ATTACK DETECTED', msg: 'Server under flood attack. Filtering malicious traffic...' },
+    BRUTE_FORCE: { title: '🟠 BRUTE FORCE DETECTED', msg: 'Multiple failed auth attempts. Account lockout initiated...' },
+    BOT: { title: '🟣 BOT ACTIVITY DETECTED', msg: 'Suspicious automated traffic pattern identified...' }
+  };
+
+  popup.innerHTML = `
+    <div class="alert-title">${msgs[type].title}</div>
+    <div class="alert-msg">${msgs[type].msg}</div>
+  `;
+
+  overlay.appendChild(popup);
+  setTimeout(() => popup.remove(), 3500);
+}
+
+// ─── Auto Simulation ─────────────────────────────────────────────────
+function toggleAuto() {
+  if (isAuto) {
+    stopAuto();
+  } else {
+    startAuto();
+  }
+}
+
+function startAuto() {
+  isAuto = true;
+  document.getElementById('autoBtn').textContent = '⚡ STOP AUTO SIMULATION';
+  document.getElementById('autoBtn').style.color = '#ff2d55';
+  document.getElementById('autoBtn').style.borderColor = '#ff2d55';
+
+  const types = ['NORMAL', 'NORMAL', 'NORMAL', 'DDOS', 'BRUTE_FORCE', 'BOT', 'NORMAL', 'DDOS'];
+  let idx = 0;
+
+  autoInterval = setInterval(() => {
+    simulateAttack(types[idx % types.length]);
+    idx++;
+  }, 2000 / simSpeed);
+}
+
+function stopAuto() {
+  isAuto = false;
+  if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
+  document.getElementById('autoBtn').textContent = '⚡ START AUTO SIMULATION';
+  document.getElementById('autoBtn').style.color = 'var(--cyan)';
+  document.getElementById('autoBtn').style.borderColor = 'var(--cyan)';
+}
+
+function stopAll() {
+  stopAuto();
+  packets = [];
+}
+
+// ─── Speed Control ───────────────────────────────────────────────────
+function updateSpeed(val) {
+  simSpeed = parseInt(val);
+  document.getElementById('speedVal').textContent = val + 'x';
+  if (isAuto) { stopAuto(); startAuto(); }
+}
+
+// ─── Init ────────────────────────────────────────────────────────────
+// Start with normal traffic
+setTimeout(() => simulateAttack('NORMAL'), 500);
+setTimeout(() => simulateAttack('NORMAL'), 1500);
+</script>
+</body>
+</html>
+{% endblock %}

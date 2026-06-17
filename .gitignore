@@ -1,0 +1,23 @@
+# Python cache files - no need to upload these
+__pycache__/
+*.pyc
+*.pyo
+
+# Database - don't upload, others will create their own
+db.sqlite3
+
+# Environment / secrets
+.env
+venv/
+env/
+
+# Media files (large ML model & datasets)
+media/rf_model.pkl
+media/Balanced_IDS_Data.csv
+media/IDS_4class_final_balanced.csv
+media/traffic_capture.csv
+media/accuracy_results.pkl
+media/feature_cols.pkl
+media/label_encoder.pkl
+media/scaler.pkl
+media/dataset_name.txt

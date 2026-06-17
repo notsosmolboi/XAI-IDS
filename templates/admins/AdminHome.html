@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Admin Home – XAI Threat Detect{% endblock %}
+{% block topbar_nav %}
+<div class="topbar-nav">
+    <a href="{% url 'adminhome' %}" class="active"><i class="fa fa-gauge me-1"></i>Dashboard</a>
+    <a href="{% url 'RegisterUsersView' %}"><i class="fa fa-users me-1"></i>Manage Users</a>
+    <a href="/" ><i class="fa fa-sign-out-alt me-1"></i>Logout</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Admin <span>Dashboard</span></h1>
+    <p>Manage users and system settings</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-value" id="totalUsers">{{ total_users }}</div>
+            <div class="stat-label"><i class="fa fa-users me-1"></i>Total Users</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-value" style="color:#64ffda;" id="activeUsers">{{ activated_users }}</div>
+            <div class="stat-label"><i class="fa fa-check-circle me-1"></i>Activated Users</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-value" style="color:#ffa07a;" id="pendingUsers">{{ pending_users }}</div>
+            <div class="stat-label"><i class="fa fa-clock me-1"></i>Pending Approval</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-bolt"></i> Quick Actions</div>
+            <div class="d-flex flex-column gap-3">
+                <a href="{% url 'RegisterUsersView' %}" class="btn-xai"><i class="fa fa-users"></i> View & Manage Users</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="xai-card">
+            <div class="xai-card-title"><i class="fa fa-shield-halved"></i> System Info</div>
+            <p style="color:var(--text-dim);font-size:.9rem;line-height:1.7;">
+                This is the XAI Cyber Threat Detection admin panel. Use the controls above to manage user access and approvals.
+                Activated users can log in and use the detection system.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

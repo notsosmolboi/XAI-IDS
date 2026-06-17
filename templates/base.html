@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}XAI Cyber Threat Detection{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a192f;
+            --accent: #64ffda;
+            --accent2: #00b4d8;
+            --sidebar-w: 260px;
+            --text-light: #ccd6f6;
+            --text-dim: #8892b0;
+            --card-bg: #112240;
+            --bg-dark: #0a192f;
+            --bg-mid: #0d2137;
+            --danger-col: #ff6b6b;
+            --success-col: #64ffda;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+        /* ── Navbar ── */
+        .topbar {
+            background: rgba(10,25,47,0.97);
+            border-bottom: 1px solid rgba(100,255,218,0.15);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .topbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none;
+        }
+        .topbar-brand .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: var(--primary);
+        }
+        .topbar-brand span {
+            font-size: 1.1rem; font-weight: 700; color: var(--accent);
+            letter-spacing: 0.5px;
+        }
+        .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
+        .topbar-nav a {
+            color: var(--text-dim); text-decoration: none;
+            padding: 8px 16px; border-radius: 6px;
+            font-size: 0.875rem; font-weight: 500;
+            transition: all 0.2s;
+        }
+        .topbar-nav a:hover, .topbar-nav a.active {
+            color: var(--accent); background: rgba(100,255,218,0.08);
+        }
+        .topbar-user {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text-dim); font-size: 0.875rem;
+        }
+        .user-badge {
+            background: rgba(100,255,218,0.12);
+            border: 1px solid rgba(100,255,218,0.3);
+            color: var(--accent);
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        /* ── Main Content ── */
+        .main-content {
+            margin-top: 64px;
+            padding: 2rem;
+            min-height: calc(100vh - 64px);
+        }
+        /* ── Cards ── */
+        .xai-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(100,255,218,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.3s;
+        }
+        .xai-card:hover { border-color: rgba(100,255,218,0.25); }
+        .xai-card-title {
+            color: var(--accent); font-size: 1rem; font-weight: 600;
+            margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        /* ── Stat Cards ── */
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(100,255,218,0.1);
+            border-radius: 12px; padding: 1.2rem;
+            text-align: center; position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+        }
+        .stat-value {
+            font-size: 2rem; font-weight: 700; color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-label { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
+        /* ── Buttons ── */
+        .btn-xai {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: var(--primary); border: none;
+            padding: 10px 24px; border-radius: 8px;
+            font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s;
+            text-decoration: none; display: inline-flex;
+            align-items: center; gap: 8px;
+        }
+        .btn-xai:hover { opacity: 0.9; transform: translateY(-1px); color: var(--primary); }
+        .btn-outline-xai {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 10px 24px; border-radius: 8px;
+            font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s;
+            text-decoration: none; display: inline-flex;
+            align-items: center; gap: 8px;
+        }
+        .btn-outline-xai:hover {
+            background: rgba(100,255,218,0.08); color: var(--accent);
+        }
+        /* ── Form controls ── */
+        .form-control-xai {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(100,255,218,0.2);
+            color: var(--text-light);
+            border-radius: 8px; padding: 10px 14px;
+            width: 100%; transition: all 0.2s;
+        }
+        .form-control-xai:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(100,255,218,0.05);
+            box-shadow: 0 0 0 3px rgba(100,255,218,0.1);
+        }
+        .form-label-xai { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 6px; }
+        /* ── Alerts ── */
+        .alert-xai-success {
+            background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3);
+            color: var(--accent); border-radius: 8px; padding: 12px 16px;
+        }
+        .alert-xai-danger {
+            background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3);
+            color: var(--danger-col); border-radius: 8px; padding: 12px 16px;
+        }
+        /* ── Tables ── */
+        .table-xai { color: var(--text-light); }
+        .table-xai th {
+            background: rgba(100,255,218,0.08); color: var(--accent);
+            font-size: 0.8rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-color: rgba(100,255,218,0.1) !important;
+        }
+        .table-xai td { border-color: rgba(255,255,255,0.05) !important; font-size: 0.85rem; }
+        .table-xai tr:hover td { background: rgba(100,255,218,0.04); }
+        /* ── Page Header ── */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 1.8rem; font-weight: 700; color: var(--text-light);
+        }
+        .page-header p { color: var(--text-dim); font-size: 0.9rem; }
+        .page-header h1 span { color: var(--accent); }
+        /* ── Badge ── */
+        .badge-xai {
+            background: rgba(100,255,218,0.12);
+            border: 1px solid rgba(100,255,218,0.3);
+            color: var(--accent); font-size: 0.75rem;
+            padding: 3px 10px; border-radius: 20px;
+        }
+        .badge-danger {
+            background: rgba(255,107,107,0.12);
+            border: 1px solid rgba(255,107,107,0.3);
+            color: var(--danger-col); font-size: 0.75rem;
+            padding: 3px 10px; border-radius: 20px;
+        }
+        /* ── Images ── */
+        .plot-img { max-width: 100%; border-radius: 8px; }
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: rgba(100,255,218,0.2); border-radius: 3px; }
+        /* ── Loading overlay ── */
+        #loadingOverlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(10,25,47,0.9);
+            z-index: 9999; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px;
+        }
+        #loadingOverlay.active { display: flex; }
+        .spinner-xai {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(100,255,218,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* ── Code/Pre ── */
+        pre.report-pre {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(100,255,218,0.1);
+            border-radius: 8px; padding: 1rem; color: var(--text-light);
+            font-size: 0.8rem; overflow-x: auto;
+        }
+        /* ── Auth pages ── */
+        .auth-wrapper {
+            min-height: 100vh; background: var(--bg-dark);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .auth-wrapper::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 30% 50%, rgba(100,255,218,0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 50%, rgba(0,180,216,0.06) 0%, transparent 60%);
+        }
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(100,255,218,0.15);
+            border-radius: 16px; padding: 2.5rem;
+            width: 100%; max-width: 420px; position: relative;
+        }
+        .auth-card .logo-area { text-align: center; margin-bottom: 2rem; }
+        .auth-card .logo-area .icon {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 14px; display: inline-flex;
+            align-items: center; justify-content: center;
+            font-size: 28px; color: var(--primary); margin-bottom: 12px;
+        }
+        .auth-card .logo-area h2 {
+            color: var(--accent); font-size: 1.4rem; font-weight: 700;
+        }
+        .auth-card .logo-area p { color: var(--text-dim); font-size: 0.85rem; }
+        /* ── Scrollable table container ── */
+        .table-responsive-xai {
+            overflow-x: auto; border-radius: 8px;
+            border: 1px solid rgba(100,255,218,0.08);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div id="loadingOverlay">
+    <div class="spinner-xai"></div>
+    <p style="color: var(--accent); font-weight: 600;">Processing...</p>
+</div>
+
+{% block fullpage %}
+{% if not hide_topbar %}
+<nav class="topbar">
+    <a href="{% url 'index' %}" class="topbar-brand">
+        <div class="logo-icon"><i class="fa fa-shield-halved"></i></div>
+        <span>XAI Threat Detect</span>
+    </a>
+    {% block topbar_nav %}{% endblock %}
+    <div class="topbar-user">
+        {% if request.session.user_name %}
+            <span class="user-badge"><i class="fa fa-user me-1"></i>{{ request.session.user_name }}</span>
+            <a href="{% url 'index' %}" style="color:var(--text-dim);text-decoration:none;font-size:0.8rem;">
+                <i class="fa fa-sign-out-alt"></i>
+            </a>
+        {% endif %}
+    </div>
+</nav>
+<div class="main-content">
+    {% for message in messages %}
+        <div class="alert-xai-{% if message.tags == 'error' %}danger{% else %}success{% endif %} mb-3">
+            <i class="fa fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %} me-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+</div>
+{% endif %}
+{% endblock %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+// Auto-remove alerts
+setTimeout(() => {
+    document.querySelectorAll('.alert-xai-success, .alert-xai-danger').forEach(el => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    });
+}, 4000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
