@@ -105,7 +105,7 @@ git clone https://github.com/YOUR_USERNAME/XAI-IDS.git
 cd XAI-IDS
 ```
 
-**2. Install dependencies**                 # Needs some time to install all the dependencies 
+**2. Install dependencies**     
 ```bash
 pip install -r requirements.txt
 ```
